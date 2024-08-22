@@ -1,0 +1,95 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "LambdaSNSPublishPolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Description": "must used ManagedPolicy for it to be attached to user, group, or role",
+      "Properties": {
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "VisualEditor0",
+              "Effect": "Allow",
+              "Action": [
+                "sns:Publish",
+                "sns:GetTopicAttributes",
+                "sns:ListTopics"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    },
+    "LambdaDynamoDBStreamsReadPolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "VisualEditor0",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:GetShardIterator",
+                "dynamodb:DescribeStream",
+                "dynamodb:ListStreams",
+                "dynamodb:GetRecords"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    },
+    "LambdaReadSQSPolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "VisualEditor0",
+              "Effect": "Allow",
+              "Action": [
+                "sqs:DeleteMessage",
+                "sqs:ReceiveMessage",
+                "sqs:GetQueueAttributes",
+                "sqs:ChangeMessageVisibility"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    },
+    "LambdaDynamoDBStreamsSNSRole": {
+      "Type": "AWS::IAM::Role",
+      "Description": "must used ManagedPolicyARNS with Ref to attach user",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          { "Ref": "LambdaSNSPublishPolicy"},
+          { "Ref": "LambdaDynamoDBStreamsReadPolicy"}
+        ],
+        "RoleName": "Lambda-DynamoDBStreams-SNS"
+      }
+    }
+  }
+}
