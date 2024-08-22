@@ -108,7 +108,15 @@
             "AttributeName": "orderID",
             "KeyType": "HASH"
           }
-        ]
+        ],
+        "TableName": "orders"
+      }
+    },
+    "POCQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": "POC-Queue",
+        "SqsManagedSseEnabled": true
       }
     }
   }
