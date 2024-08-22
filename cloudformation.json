@@ -3,7 +3,6 @@
   "Resources": {
     "LambdaSNSPublishPolicy": {
       "Type": "AWS::IAM::ManagedPolicy",
-      "Description": "must used ManagedPolicy for it to be attached to user, group, or role",
       "Properties": {
         "PolicyDocument": {
           "Version": "2012-10-17",
@@ -66,7 +65,6 @@
     },
     "LambdaDynamoDBStreamsSNSRole": {
       "Type": "AWS::IAM::Role",
-      "Description": "must used ManagedPolicyARNS with Ref to attach user",
       "Properties": {
         "AssumeRolePolicyDocument": {
           "Version": "2012-10-17",
@@ -85,10 +83,32 @@
           ]
         },
         "ManagedPolicyArns": [
-          { "Ref": "LambdaSNSPublishPolicy"},
-          { "Ref": "LambdaDynamoDBStreamsReadPolicy"}
+          {
+            "Ref": "LambdaSNSPublishPolicy"
+          },
+          {
+            "Ref": "LambdaDynamoDBStreamsReadPolicy"
+          }
         ],
         "RoleName": "Lambda-DynamoDBStreams-SNS"
+      }
+    },
+    "OrderTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "orderID",
+            "AttributeType": "S"
+          }
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "KeySchema": [
+          {
+            "AttributeName": "orderID",
+            "KeyType": "HASH"
+          }
+        ]
       }
     }
   }
