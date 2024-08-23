@@ -1,9 +1,30 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
+    "LambdaWriteDynamoDBPolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "ManagedPolicyName": "Lambda-Write-DynamoDB",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "VisualEditor0",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:PutItem",
+                "dynamodb:DescribeTable"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    },
     "LambdaSNSPublishPolicy": {
       "Type": "AWS::IAM::ManagedPolicy",
       "Properties": {
+        "ManagedPolicyName": "Lambda-SNS-Publish",
         "PolicyDocument": {
           "Version": "2012-10-17",
           "Statement": [
@@ -24,6 +45,7 @@
     "LambdaDynamoDBStreamsReadPolicy": {
       "Type": "AWS::IAM::ManagedPolicy",
       "Properties": {
+        "ManagedPolicyName": "Lambda-DynamoDBStreams-Read",
         "PolicyDocument": {
           "Version": "2012-10-17",
           "Statement": [
@@ -93,6 +115,61 @@
         "RoleName": "Lambda-DynamoDBStreams-SNS"
       }
     },
+    "LambdaSQSDynamoDBRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          {
+            "Ref": "LambdaWriteDynamoDBPolicy"
+          },
+          {
+            "Ref": "LambdaReadSQSPolicy"
+          }
+        ],
+        "RoleName": "Lambda-SQS-DynamoDB"
+      }
+    },
+    "APIGatewaySQSRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "apigateway.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+        ],
+        "RoleName": "APIGateway-SQS"
+      }
+    },
     "OrderTable": {
       "Type": "AWS::DynamoDB::Table",
       "Properties": {
@@ -118,6 +195,68 @@
         "QueueName": "POC-Queue",
         "SqsManagedSseEnabled": true
       }
+    },
+    "POCQueuePolicy": {
+      "Type": "AWS::SQS::QueuePolicy",
+      "Properties": {
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Id": "__default_policy_ID",
+          "Statement": [
+            {
+              "Sid": "__owner_statement",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS":  {"Fn::Sub": "${AWS::AccountId}"}
+              },
+              "Action": [
+                "SQS:*"
+              ],
+              "Resource": {
+                "Ref": "POCQueue"
+              }
+            },
+            {
+              "Sid": "__sender_statement",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": [
+                  {"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/APIGateway-SQS"}
+                ]
+              },
+              "Action": [
+                "SQS:SendMessage"
+              ],
+              "Resource": {
+                "Ref": "POCQueue"
+              }
+            },
+            {
+              "Sid": "__receiver_statement",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": [
+                  {"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/Lambda-SQS-DynamoDB"}
+                ]
+              },
+              "Action": [
+                "SQS:ChangeMessageVisibility",
+                "SQS:DeleteMessage",
+                "SQS:ReceiveMessage"
+              ],
+              "Resource": {
+                "Ref": "POCQueue"
+              }
+            }
+          ]
+        },
+        "Queues": [
+          {
+            "Ref": "POCQueue"
+          }
+        ]
+      }
     }
   }
 }
+
